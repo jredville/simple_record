@@ -1051,6 +1051,7 @@ module SimpleRecord
 
 
   class Activerecordtosdb_subrecord_array
+    include Enumerable
     def initialize(subname, referencename, referencevalue)
       @subname =subname.classify
       @referencename =referencename.tableize.singularize + "_id"
