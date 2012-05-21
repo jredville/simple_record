@@ -242,7 +242,6 @@ module SimpleRecord
           #
         def create_domain(dom=nil)
           dom = domain if dom.nil?
-          puts "Creating new SimpleDB Domain: " + dom
           connection.create_domain(dom)
         end
 
@@ -255,7 +254,6 @@ module SimpleRecord
           #
         def delete_domain(dom=nil)
           dom = domain if dom.nil?
-          puts "!!! DELETING SimpleDB Domain: " + dom
           connection.delete_domain(dom)
         end
 
@@ -378,9 +376,7 @@ module SimpleRecord
           options[:conditions] = build_conditions(options[:conditions])
             # join ids condition and user defined conditions
           options[:conditions] = options[:conditions].blank? ? ids_cond : "(#{options[:conditions]}) AND #{ids_cond}"
-            #puts 'options=' + options.inspect
           result = sql_select(options)
-            #puts 'select_from_ids result=' + result.inspect
             # if one record was requested then return it
           unless bunch_of_records_requested
             result[:single_only] = true
@@ -391,7 +387,6 @@ module SimpleRecord
           else
             # if a bunch of records was requested then return check that we found all of them
             # and return as an array
-            puts 'is_sharded? ' + is_sharded?.to_s
             unless is_sharded? || args.size == result[:items].size
               # todo: might make sense to return the array but with nil values in the slots where an item wasn't found?
               id_list = args.map { |i| "'#{i}'" }.join(',')
@@ -405,7 +400,6 @@ module SimpleRecord
 
         def sql_select(options) # :nodoc:
           count = options[:count] || false
-            #puts 'count? ' + count.to_s
           @next_token = options[:next_token]
           @consistent_read = options[:consistent_read]
           select_expression = build_select(options)
@@ -418,7 +412,6 @@ module SimpleRecord
             total_count = 0
             total_box_usage = 0
             query_result = self.connection.select(select_expression, options) do |result|
-              #puts 'result=' + result.inspect
               total_count += result[:items][0]["Domain"]["Count"][0].to_i # result.delete(:items)[0]["Domain"]["Count"][0].to_i
               total_box_usage += result[:box_usage].to_i
               true #continue loop
@@ -430,7 +423,6 @@ module SimpleRecord
             query_result = self.connection.select(select_expression, options)
             @next_token = query_result[:next_token]
           end
-            # puts 'QR=' + query_result.inspect
 
           #if count
             #ret[:count] = query_result.delete(:items)[0]["Domain"]["Count"][0].to_i
@@ -599,10 +591,8 @@ module SimpleRecord
             # get rid of the find ones, only select now
             to_send_to = $1
             attributes = method.to_s[$1.length..method.to_s.length]
-#            puts 'attributes=' + attributes
             if to_send_to[0...4] == "find"
               to_send_to = "select" + to_send_to[4..to_send_to.length]
-#              puts 'CONVERTED ' + $1 + " to " + to_send_to
             end
 
             options = args.last.is_a?(Hash) ? args.pop : {}
@@ -615,7 +605,6 @@ module SimpleRecord
         def build_select(options) # :nodoc:
           select = options[:select] || '*'
           select = options[:count] ? "count(*)" : select
-            #puts 'select=' + select.to_s
           from = options[:from] || domain
           condition_fields = parse_condition_fields(options[:conditions])
           conditions = options[:conditions] ? "#{build_conditions(options[:conditions])}" : ''
@@ -627,13 +616,10 @@ module SimpleRecord
             if condition_fields.nil? || !condition_fields.include?(sort_by)
 #                            conditions << (conditions.blank? ? " WHERE " : " AND ") << "(#{sort_by} IS NOT NULL)"
               conditions = (conditions.blank? ? "" : "(#{conditions}) AND ") << "(#{sort_by} IS NOT NULL)"
-            else
-#                            puts 'skipping is not null on sort because already there.'
             end
 
           end
           conditions = conditions.blank? ? "" : " WHERE #{conditions}"
-            #                    puts 'CONDITIONS=' + conditions
           "SELECT #{select} FROM `#{from}`#{conditions}#{order}#{limit}"
         end
 
@@ -653,7 +639,6 @@ module SimpleRecord
           return nil unless conditions && conditions.present? && conditions.is_a?(Array)
           rx = /\b(\w*)[\s|>=|<=|!=|=|>|<|like|between]/
           fields = conditions[0].scan(rx)
-#                    puts 'condition_fields = ' + fields.inspect
           fields.flatten
         end
 
@@ -880,7 +865,6 @@ module SimpleRecord
         options[:create_domain] = true if options[:create_domain].nil?
         pre_save2
         atts_to_save = @attributes.dup
-          #puts 'atts_to_save=' + atts_to_save.inspect
           #options = params.first.is_a?(Hash) ? params.pop : {}
         if options[:except]
           options[:except].each do |e|
@@ -893,7 +877,6 @@ module SimpleRecord
           atts_to_save.delete_if { |key, value| !dirty_atts.has_key?(key) }
         end
         dom = options[:domain] || domain
-          #puts 'atts_to_save2=' + atts_to_save.inspect
         connection.put_attributes(dom, id, atts_to_save, :replace, options)
         apres_save2
         @attributes

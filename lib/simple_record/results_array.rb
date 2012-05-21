@@ -10,7 +10,6 @@ module SimpleRecord
 
         def initialize(clz=nil, params=[], results=nil, next_token=nil)
             @clz    = clz
-            #puts 'class=' + clz.inspect
             @params = params
             if @params.size <= 1
                 options    = {}
@@ -19,7 +18,6 @@ module SimpleRecord
             @items            = results[:items]
             @currentset_items = results[:items]
             @next_token       = next_token
-#            puts 'bu=' + results[:box_usage]
             @box_usage        = results[:box_usage].to_f
             @request_id       = results[:request_id]
             @options          = @params[1]
@@ -28,7 +26,6 @@ module SimpleRecord
                 @start_at = @options[:per_page] * (@options[:page] - 1)
             end
             @index = 0
-            # puts 'RESULTS_ARRAY=' + self.inspect
         end
 
         def << (val)
@@ -36,11 +33,6 @@ module SimpleRecord
         end
 
         def [](*i)
-#            puts 'i.inspect=' + i.inspect
-#            puts i.size.to_s
-#            i.each do |x|
-#                puts 'x=' + x.inspect + " -- " + x.class.name
-#            end
             if i.size == 1
                 # either fixnum or range
                 x = i[0]
@@ -91,7 +83,6 @@ module SimpleRecord
                 return @items.size
             end
             return @count if @count
-#            puts '@params=' + @params.inspect
             params_for_count    = @params.dup
             params_for_count[0] = :count
             params_for_count[1] = params_for_count[1].dup # for deep clone
@@ -99,10 +90,7 @@ module SimpleRecord
             params_for_count[1].delete(:per_token)
             params_for_count[1][:called_by] = :results_array
 
-            #       puts '@params2=' + @params.inspect
-            # puts 'params_for_count=' + params_for_count.inspect
             @count = clz.find(*params_for_count)
-#            puts '@count=' + @count.to_s
             @count
         end
 
@@ -116,17 +104,13 @@ module SimpleRecord
 
         def each2(i, &blk)
             options = @params[1]
-#            puts 'options=' + options.inspect
             limit   = options[:limit]
-            #        puts 'limit=' + limit.inspect
 
             if i > @items.size
                 i = @items.size
             end
             range = i..@items.size
-#            puts 'range=' + range.inspect
             @items[range].each do |v|
-#                puts "i=" + i.to_s
                 yield v
                 i += 1
                 @index += 1
@@ -138,10 +122,6 @@ module SimpleRecord
 
             # no more items, but is there a next token?
             unless @next_token.nil?
-                #puts 'finding more items...'
-                #puts 'params in block=' + params.inspect
-                #puts "i from results_array = " + @i.to_s
-
                 load_next_token_set
                 each2(i, &blk)
             end
@@ -149,11 +129,8 @@ module SimpleRecord
 
         # for will_paginate support
         def total_pages
-            #puts 'total_pages'
-#            puts  @params[1][:per_page].to_s
             return 1 if @params[1][:per_page].nil?
             ret = (size / @params[1][:per_page].to_f).ceil
-            #puts 'ret=' + ret.to_s
             ret
         end
 

@@ -23,8 +23,6 @@ module SimpleRecord
       end
 
       def find_sharded(*params)
-        puts 'find_sharded ' + params.inspect
-
         options = params.size > 1 ? params[1] : {}
 
         if options[:shard] # User specified shard.
@@ -33,7 +31,6 @@ module SimpleRecord
         else
           domains = sharded_domains
         end
-#                puts "sharded_domains=" + domains.inspect
 
         single = false
         by_ids = false
@@ -48,8 +45,6 @@ module SimpleRecord
               single = true
             end
         end
-        puts 'single? ' + single.inspect
-        puts 'by_ids? ' + by_ids.inspect
 
         # todo: should have a global executor
         executor = options[:concurrent] ? Concur::Executor.new_multi_threaded_executor : Concur::Executor.new_single_threaded_executor
@@ -68,17 +63,13 @@ module SimpleRecord
           p2[1] = op2
 
           futures << executor.execute do
-            puts 'executing=' + p2.inspect
             # todo: catch RecordNotFound errors and throw later if there really isn't any record found.
             rs = find(*p2)
-            puts 'rs=' + rs.inspect
             rs
           end
         end
         futures.each do |f|
-          puts 'getting future ' + f.inspect
           if params.first == :first || single
-            puts 'f.get=' + f.get.inspect
             return f.get if f.get
           elsif by_ids
             results << f.get if f.get
@@ -87,7 +78,6 @@ module SimpleRecord
           end
         end
         executor.shutdown
-#        puts 'results=' + results.inspect
         if params.first == :first || single
           # Then we found nothing by this point so return nil
           return nil
@@ -118,16 +108,13 @@ module SimpleRecord
     end
 
     def sharded_domain
-#            puts 'getting sharded_domain'
       options = self.class.sharding_options
 #            val = self.send(options[:on])
-#            puts "val=" + val.inspect
 #            shards = options[:shards] # is user passed in static array of shards
 #            if options[:shards].is_a?(Symbol)
 #                shards = self.send(shards)
 #            end
       sharded_domain = "#{domain}_#{self.send(options[:map])}"
-#            puts "sharded_domain=" + sharded_domain.inspect
       sharded_domain
     end
 
@@ -141,7 +128,6 @@ module SimpleRecord
       end
 
       def add_results(rs)
-#        puts 'adding results=' + rs.inspect
         @results_arrays << rs
       end
 
@@ -169,7 +155,6 @@ module SimpleRecord
 
       def [](*i)
         if i.size == 1
-          #            puts '[] i=' + i.to_s
           index = i[0]
           return element_at(index)
         else
@@ -212,8 +197,6 @@ module SimpleRecord
         return @size if @size
         s = 0
         @results_arrays.each do |rs|
-          #            puts 'rs=' + rs.inspect
-          #            puts 'rs.size=' + rs.size.inspect
           s += rs.size
         end
         @size = s
@@ -234,11 +217,8 @@ module SimpleRecord
 
       # for will_paginate support
       def total_pages
-        # puts 'total_pages'
-        # puts  @params[1][:per_page].to_s
         return 1 if @params[1][:per_page].nil?
         ret = (size / @params[1][:per_page].to_f).ceil
-        #puts 'ret=' + ret.to_s
         ret
       end
 
@@ -293,15 +273,12 @@ module SimpleRecord
     # Some hashing algorithms
     module Hashing
       def self.sdbm_hash(str, len=str.length)
-#                puts 'sdbm_hash ' + str.inspect
         hash = 0
         len.times { |i|
           c = str[i]
-#                    puts "c=" + c.class.name + "--" + c.inspect + " -- " + c.ord.inspect
           c = c.ord
           hash = c + (hash << 6) + (hash << 16) - hash
         }
-#                puts "hash=" + hash.inspect
         return hash
       end
     end

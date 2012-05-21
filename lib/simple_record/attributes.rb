@@ -4,7 +4,6 @@ module SimpleRecord
 
 
     def self.included(base)
-      #puts 'Callbacks included in ' + base.inspect
 =begin
             instance_eval <<-endofeval
 
@@ -43,8 +42,6 @@ module SimpleRecord
       end
 
       def has_attributes2(args, options_for_all={})
-#            puts 'args=' + args.inspect
-#            puts 'options_for_all = ' + options_for_all.inspect
         args.each do |arg|
           arg_options = {}
           if arg.is_a?(Hash)
@@ -119,14 +116,12 @@ module SimpleRecord
       end
 
       def are_ints(*args)
-        #    puts 'calling are_ints: ' + args.inspect
         args.each do |arg|
           defined_attributes[arg.to_sym].type = :int
         end
       end
 
       def are_floats(*args)
-        #    puts 'calling are_ints: ' + args.inspect
         args.each do |arg|
           defined_attributes[arg.to_sym].type = :float
         end
@@ -243,9 +238,7 @@ module SimpleRecord
     end
 
     def handle_virtuals(attrs)
-      #puts 'handle_virtuals'
       self.class.virtuals.each do |virtual|
-       # puts 'virtual=' + virtual.inspect
           #we first copy the information for the virtual to an instance variable of the same name
         send("#{virtual}=", attrs[virtual])
         #eval("@#{virtual}=attrs['#{virtual}']")
@@ -257,8 +250,6 @@ module SimpleRecord
 
 
     def set(name, value, dirtify=true)
-#            puts "SET #{name}=#{value.inspect}" if SimpleRecord.logging?
-#            puts "self=" + self.inspect
       attname = name.to_s # default attname
       name = name.to_sym
       att_meta = get_att_meta(name)
@@ -267,11 +258,8 @@ module SimpleRecord
         # check if it ends with id and see if att_meta is there
         ends_with = name.to_s[-3, 3]
         if ends_with == "_id"
-#                    puts 'ends with id'
           n2 = name.to_s[0, name.length-3]
-#                    puts 'n2=' + n2
           att_meta = defined_attributes_local[n2.to_sym]
-#                    puts 'defined_attributes_local=' + defined_attributes_local.inspect
           attname = name.to_s
           attvalue = value
           name = n2.to_sym
@@ -296,17 +284,13 @@ module SimpleRecord
           attname = name.to_s
           attvalue = att_meta.init_value(value)
 #                  attvalue = value
-#puts 'converted ' + value.inspect + ' to ' + attvalue.inspect
         end
       end
       attvalue = strip_array(attvalue)
       make_dirty(name, attvalue) if dirtify
-                          #            puts "ARG=#{attname.to_s} setting to #{attvalue}"
       sdb_val = ruby_to_sdb(name, attvalue)
-                          #            puts "sdb_val=" + sdb_val.to_s
       @attributes[attname] = sdb_val
                           #            attvalue = wrap_if_required(name, attvalue, sdb_val)
-                          #            puts 'attvalue2=' + attvalue.to_s
 
       if store_rb_val
         @attributes_rb[name.to_s] = value
@@ -331,15 +315,12 @@ module SimpleRecord
       # Since SimpleDB supports multiple attributes per value, the values are an array.
       # This method will return the value unwrapped if it's the only, otherwise it will return the array.
     def get_attribute(name)
-#            puts "get_attribute #{name}"
 # Check if this arg is already converted
       name_s = name.to_s
       name = name.to_sym
       att_meta = get_att_meta(name)
-#            puts "att_meta for #{name}: " + att_meta.inspect
       if att_meta && att_meta.type == :clob
         ret = @lobs[name]
-#                puts 'get_attribute clob ' + ret.inspect
         if ret
           if ret.is_a? RemoteNil
             return nil
@@ -353,7 +334,6 @@ module SimpleRecord
             begin
               single_clob = s3_bucket(false, :s3_bucket=>:new).get(single_clob_id)
               single_clob = JSON.parse(single_clob)
-#                            puts "single_clob=" + single_clob.inspect
               single_clob.each_pair do |name2, val|
                 @lobs[name2.to_sym] = val
               end
@@ -369,7 +349,6 @@ module SimpleRecord
           else
             begin
               ret = s3_bucket.get(s3_lob_id(name))
-                # puts 'got from s3 ' + ret.inspect
               SimpleRecord.stats.s3_gets += 1
             rescue Aws::AwsError => ex
               if ex.include?(/NoSuchKey/) || ex.include?(/NoSuchBucket/)

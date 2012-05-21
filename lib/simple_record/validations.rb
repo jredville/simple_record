@@ -9,7 +9,6 @@ module SimpleRecord
 #    end
 
     def self.included(base)
-#      puts 'Validations included ' + base.inspect
 #      if defined?(ActiveModel)
 #        base.class_eval do
 #          alias_method :am_valid?, :valid?
@@ -32,7 +31,6 @@ module SimpleRecord
     end
 
     def valid?
-#      puts 'in rails2 valid?'
       errors.clear
 
       if respond_to?(:am_valid?)
@@ -66,13 +64,10 @@ module SimpleRecord
     end
 
     def validate_uniques
-      puts 'uniques=' + self.class.uniques.inspect
       self.class.uniques.each_pair do |k, v|
         val = self.send(k)
-        puts 'val=' + val.inspect
         if val
           ret = self.class.find(:first, :conditions=>["#{k}=?", val])
-          puts 'ret=' + ret.inspect
           if ret
             errors.add(k, "must be unique.")
           end

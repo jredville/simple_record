@@ -1,9 +1,6 @@
 module SimpleRecord
-
     class SimpleRecordError < StandardError
-
     end
-
 
     class RecordNotSaved < SimpleRecordError
         attr_accessor :record
@@ -15,7 +12,6 @@ module SimpleRecord
     end
 
     class RecordNotFound < SimpleRecordError
-
     end
 
     class Error
