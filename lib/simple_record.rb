@@ -98,6 +98,9 @@ module SimpleRecord
     def close_usage_log(type)
       return unless @usage_logging_options[type]
       @usage_logging_options[type][:file].close if @usage_logging_options[type][:file]
+      # unless we remove it, it will keep trying to log these events
+      # and will fail because the file is closed.
+      @usage_logging_options.delete(type)
     end
 
     def usage_logging_options
@@ -773,20 +776,19 @@ module SimpleRecord
       results = []
       to_save = []
       if objects && objects.size > 0
-        objects.each do |o|
-          ok = o.pre_save(options)
-          raise "Pre save failed on object [" + o.inspect + "]" if !ok
-          results << ok
-          next if !ok # todo: this shouldn't be here should it?  raises above
-          o.pre_save2
-          to_save << Aws::SdbInterface::Item.new(o.id, o.attributes, true)
-          if to_save.size == 25 # Max amount SDB will accept
-            connection.batch_put_attributes(domain, to_save, options)
-            to_save.clear
+        objects.each_slice(25) do |objs|
+          objs.each do |o|
+            ok = o.pre_save(options)
+            raise "Pre save failed on object [" + o.inspect + "]" if !ok
+            results << ok
+            next if !ok # todo: this shouldn't be here should it?  raises above
+            o.pre_save2
+            to_save << Aws::SdbInterface::Item.new(o.id, o.attributes, true)
           end
+          connection.batch_put_attributes(domain, to_save, options)
+          to_save.clear
         end
       end
-      connection.batch_put_attributes(domain, to_save, options) if to_save.size > 0
       objects.each do |o|
         o.save_lobs(nil)
       end
@@ -796,8 +798,9 @@ module SimpleRecord
       # Pass in an array of objects
     def self.batch_delete(objects, options={})
       if objects
-        # 25 item limit, we should maybe handle this limit in here.
-        connection.batch_delete_attributes @domain, objects.collect { |x| x.id }
+        objects.each_slice(25) do |objs|
+          connection.batch_delete_attributes @domain, objs.collect { |x| x.id }
+        end
       end
     end
 
