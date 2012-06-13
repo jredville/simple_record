@@ -379,13 +379,21 @@ module SimpleRecord
       super
     end
 
-
     def set_created
-      set(SimpleRecord.options[:created_col] || :created, Time.now)
+      col = SimpleRecord.options[:created_col] || :created
+      unless self[col]
+        set(col, Time.now)
+      end
     end
 
     def set_updated
-      set(SimpleRecord.options[:updated_col] || :updated, Time.now)
+      col = SimpleRecord.options[:updated_col] || :updated
+      created_col = SimpleRecord.options[:created_col] || :created
+
+      time = new_record? ? self[created_col] : Time.now
+      unless self[col] && is_dirty?(col)
+        set(col, time)
+      end
     end
 
       # an aliased method since many people use created_at/updated_at naming convention
